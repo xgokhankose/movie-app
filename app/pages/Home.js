@@ -7,13 +7,17 @@ import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityI
 
 export default class Home extends Component {
   _isMount = false;
+  genres = [];
 
   state = {
     isLoading: false,
     recentMovies: [],
     popularMovies: [],
   };
-
+  constructor(props) {
+    super(props);
+    this.genres = props.genres;
+  }
   componentDidMount() {
     this._isMount = true;
     return fetch(
@@ -22,7 +26,16 @@ export default class Home extends Component {
       .then((response) => response.json())
       .then((responseJson) => {
         const data = [];
+        var allgenres = this.genres;
         responseJson.results.forEach((movie) => {
+          movie.genres = [];
+          movie.genre_ids.forEach((genreid) => {
+            var genreData = allgenres.filter((x) => x.id == genreid);
+            if (genreData.length != 0) {
+              movie.genres.push(genreData[0].name);
+            }
+          });
+
           data.push(
             new Movie({
               id: movie.id,
@@ -35,6 +48,7 @@ export default class Home extends Component {
               vote_average: movie.vote_average,
               vote_count: movie.vote_count,
               release_date: movie.release_date,
+              genres: movie.genres,
             })
           );
         });
@@ -51,15 +65,19 @@ export default class Home extends Component {
   render() {
     return (
       <SafeAreaView style={styles.container}>
-        <View>
+        <View style={styles.header}>
           <Text style={styles.title}>Movies</Text>
-          <MaterialCommunityIcons name="magnify" />
+          <MaterialCommunityIcons name="magnify" size={24} />
         </View>
 
         <ScrollView horizontal={true} showsHorizontalScrollIndicator={true}>
           <View style={styles.homeView}>
             {this.state.popularMovies.map((item, index) => {
-              return index < 5 ? <MovieItem item={item} /> : <View />;
+              return index < 15 ? (
+                <MovieItem key={item.id} item={item} />
+              ) : (
+                <View key={item.id} />
+              );
             })}
           </View>
         </ScrollView>
@@ -82,7 +100,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight:"bold"
+    fontWeight: "bold",
   },
   homeView: {
     flexDirection: "row",
